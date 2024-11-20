@@ -1,0 +1,114 @@
+Criando um Serviço de Encurtamento de URLs: Um Guia Passo a Passo
+
+Este guia detalha como criar um serviço de encurtamento de URLs, semelhante ao bit.ly ou tinyurl.com, seguindo os passos propostos no desafio.
+
+Passo Zero: Configuração Inicial
+
+Escolha da Linguagem e IDE: Selecione sua linguagem de programação favorita (ex: Python, Node.js, Go, Java) e uma IDE adequada (ex: VS Code, IntelliJ, PyCharm).
+
+Criação do Projeto: Crie um novo projeto com um nome descritivo (ex: encurtador-url). Inicialize o gerenciamento de versão com Git (git init).
+
+Passo 1: API para Criar URLs Encurtadas
+
+Escolha do Banco de Dados: Selecione um banco de dados para armazenar as URLs originais e seus códigos encurtados. Opções incluem:
+
+SQL: PostgreSQL, MySQL, SQLite (simples para projetos menores).
+
+NoSQL: MongoDB, Redis (ideal para alta performance e escalabilidade).
+
+Estrutura do Banco de Dados: Crie uma tabela ou coleção com campos como:
+
+long_url (TEXT): URL original.
+
+short_code (TEXT): Código encurtado gerado. (UNIQUE para evitar duplicatas)
+
+Geração do Código Curto (short_code): Implemente um método para gerar códigos curtos únicos. Opções incluem:
+
+Hashing: Use uma função de hash criptográfica (ex: SHA-256) aplicada à long_url. Truncar o resultado para um tamanho desejado (ex: 6 caracteres). Considere mecanismos para lidar com colisões (hashes iguais para URLs diferentes).
+
+Base62: Converter um número inteiro (gerado com um contador ou UUID) para base 62 (usando letras maiúsculas, minúsculas e números) para obter um código curto e legível.
+
+API REST: Crie uma API REST (usando frameworks como Flask/Django (Python), Express.js (Node.js), Gin (Go), Spring Boot (Java)) com um endpoint POST (ex: /shorten).
+
+Esta API receberá a long_url no corpo da requisição (formato JSON).
+
+Verificará se a long_url já existe no banco de dados. Se existir, retorne o short_code existente.
+
+Caso contrário, gerará um short_code único, salvará a long_url e o short_code no banco de dados e retornará uma resposta JSON com: key (o short_code), long_url, e short_url (ex: http://seu-dominio/key).
+
+Tratamento de Erros: Implemente tratamento de erros para entradas inválidas (ex: long_url mal formada), retornando códigos de status HTTP apropriados (ex: 400 Bad Request) e mensagens de erro informativas.
+
+Passo 2: Redirecionamento de URLs Encurtadas
+
+API de Redirecionamento: Crie um endpoint GET que receba o short_code na URL (ex: /key).
+
+Consulta no Banco de Dados: Consulte o banco de dados para encontrar a long_url associada ao short_code.
+
+Redirecionamento: Retorne um código de status HTTP 302 Found e o header Location com a long_url encontrada.
+
+Tratamento de URLs Não Encontradas: Retorne um código de status HTTP 404 Not Found se o short_code não for encontrado.
+
+Passo 3: API para Deletar URLs Encurtadas
+
+Endpoint DELETE: Crie um endpoint DELETE (ex: /shorten/key) que receba o short_code.
+
+Remoção do Banco de Dados: Remova a entrada correspondente do banco de dados.
+
+Retorno: Retorne um código de status HTTP 200 OK se a URL for deletada com sucesso, ou 404 Not Found se não existir.
+
+Passo 4: Automação (CI/CD)
+
+Escolha de uma Plataforma de CI/CD: GitHub Actions, GitLab CI, Azure DevOps, etc.
+
+Criação de um Pipeline: Crie um pipeline de CI/CD que:
+
+Construa: Compile e crie seu projeto.
+
+Teste: Execute testes unitários e de integração.
+
+Deploy: Implemente seu serviço em um servidor (pode ser local, um serviço de hospedagem na nuvem como Heroku, AWS, Google Cloud, Azure ou um container com Docker e Kubernetes).
+
+Exemplo (Python com Flask e SQLite):
+
+(Este é um exemplo simplificado. Um projeto real precisará de mais tratamento de erros e validação.)
+
+from flask import Flask, request, jsonify, redirect
+import sqlite3
+import hashlib
+
+app = Flask(**name**)
+
+# ... (código para conectar ao SQLite e criar tabela)...
+
+@app.route('/shorten', methods=['POST'])
+def shorten_url():
+data = request.get_json()
+long_url = data.get('url')
+if not long_url:
+return jsonify({'error': 'Missing url'}), 400
+
+    short_code = hashlib.sha256(long_url.encode()).hexdigest()[:6]  # Simplificado, precisa de tratamento de colisões!
+
+    # ... (código para inserir ou verificar no banco de dados) ...
+
+    short_url = f"http://seu-dominio/{short_code}"
+    return jsonify({'key': short_code, 'long_url': long_url, 'short_url': short_url})
+
+@app.route('/<short_code>')
+def redirect_url(short_code): # ... (código para buscar a long_url no banco de dados) ...
+if long_url:
+return redirect(long_url, code=302)
+else:
+return "URL not found", 404
+
+@app.route('/shorten/<short_code>', methods=['DELETE'])
+def delete_url(short_code): # ... (código para deletar do banco de dados) ...
+return "", 200
+
+if **name** == '**main**':
+app.run(debug=True)
+content_copy
+Use code with caution.
+Python
+
+Lembre-se que este é um guia básico. Um projeto completo exigirá considerações de escalabilidade, segurança (injeção de SQL, XSS), tratamento robusto de erros e testes extensivos. A escolha das tecnologias e a implementação detalhada dependerão das suas necessidades e preferências.
